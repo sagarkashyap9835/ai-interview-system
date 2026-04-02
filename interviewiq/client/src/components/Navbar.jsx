@@ -1,95 +1,142 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; 
+import { useSelector, useDispatch } from "react-redux";
+import { motion } from "motion/react";
+import { BsRobot, BsCoin } from "react-icons/bs";
+import { FaUserAstronaut } from "react-icons/fa";
+import { HiOutlineLogout } from "react-icons/hi";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import axios from "axios";
+import { setUserData } from "../redux/userSlice";
+import { Serverurl } from "../App";
+import AuthModel from "./AuthModel";
 
-export default function Navbar() {
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+function Navbar() {
+  const { userData } = useSelector((state) => state.user);
 
-  const menu = [
-    { name: "Home", path: "/" },
-    { name: "My Wardrobe", path: "/my-wardrobe" },
-    { name: "AI Suggestions", path: "/ai-suggestions" },
-    { name: "Weekly Planner", path: "/weekly-planner" },
-    { name: "Profile", path: "/profile" },
-  ];
+  const [showCreditPopup, setShowCreditPopup] = useState(false);
+  const [showUserPopup, setShowUserPopup] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 50) setScrolled(true);
-      else setScrolled(false);
-    };
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        Serverurl + "api/auth/logout",
+        {},
+        { withCredentials: true }
+      );
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+      dispatch(setUserData(null));
+      setShowCreditPopup(false);
+      setShowUserPopup(false);
+      setShowAuth(false);
+
+      navigate("/");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
-    <nav
-      className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300 ${
-        scrolled ? "bg-green-100 shadow-md" : "bg-white"
-      }`}
-    >
-      <div className="relative flex items-center justify-between px-6 md:px-12 py-4 text-gray-800">
-        {/* Logo */}
-        <h1 className="text-xl font-semibold tracking-wide text-[#1f4f47]">
-          ClosetIQ
-        </h1>
+    <>
+      <div className="bg-[#f3f3f3] flex justify-center px-4 pt-6">
+        <motion.div
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-6xl bg-white rounded-[24px] shadow-sm border border-gray-200 px-8 py-4 flex justify-between items-center"
+        >
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <BsRobot className="text-2xl text-blue-600" />
+            <h1 className="text-lg font-semibold">AI Interview</h1>
+          </div>
 
-        {/*  Menu */}
-        <div className="hidden md:flex items-center gap-6 ml-7 text-sm">
-          {menu.map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className="relative overflow-hidden h-6 group"
-            >
-              <span className="block group-hover:-translate-y-full transition-transform duration-300">
-                {item.name}
-              </span>
-              <span className="block absolute top-full left-0 group-hover:translate-y-[-100%] transition-transform duration-300 text-[#1f4f47]">
-                {item.name}
-              </span>
-            </Link>
-          ))}
-        </div>
+          <div className="flex items-center gap-3">
 
+            {/* Credits */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (!userData) {
+                    setShowAuth(true);
+                    return;
+                  }
+                  setShowCreditPopup(!showCreditPopup);
+                  setShowUserPopup(false);
+                }}
+                className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full"
+              >
+                <BsCoin size={20} />
+                {userData?.credits || 0}
+              </button>
 
-        <div className="button-bg rounded-full p-0.5 hover:scale-105 transition duration-300 active:scale-100">
-          <button className="px-8 text-sm py-2.5 text-white rounded-full font-medium bg-gray-800">
-            Click Me
-          </button>
-        </div>
+              {showCreditPopup && (
+                <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg p-4">
+                  <p className="text-sm mb-3">
+                    Need more credits to continue interview?
+                  </p>
+                  <button
+                    onClick={() => navigate("/pricing")}
+                    className="w-full bg-black text-white py-2 rounded-lg"
+                  >
+                    Buy Now
+                  </button>
+                </div>
+              )}
+            </div>
 
-        <button onClick={() => setOpen(!open)} className="md:hidden text-gray-700">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+            {/* Profile */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (!userData) {
+                    setShowAuth(true); // open login modal
+                    return;
+                  }
+                  setShowUserPopup(!showUserPopup);
+                  setShowCreditPopup(false);
+                }}
+                className="w-9 h-9 bg-black text-white rounded-full flex items-center justify-center"
+              >
+                {userData?.name
+                  ? userData.name.slice(0, 1).toUpperCase()
+                  : <FaUserAstronaut size={16} />}
+              </button>
+
+              {showUserPopup && userData && (
+                <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg p-4">
+                  <p className="font-semibold mb-3">{userData?.name}</p>
+
+                  <button
+                    onClick={() => navigate("/history")}
+                    className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded"
+                  >
+                    Interview History
+                  </button>
+
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-red-500 rounded"
+                  >
+                    <HiOutlineLogout />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Mobile Menu */}
-      {open && (
-        <div className="absolute top-full left-0 bg-white w-full flex flex-col items-center gap-4 py-6 text-sm shadow-md md:hidden">
-          {menu.map((item) => (
-            <Link key={item.name} to={item.path} className="hover:text-[#1f4f47]">
-              {item.name}
-            </Link>
-          ))}
-          <button className="border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-full text-sm font-medium">
-            Contact
-          </button>
-          <button className="bg-[#1f4f47] text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-[#173c37] transition">
-            Get Started
-          </button>
-        </div>
+      {/* Auth Modal */}
+      {showAuth && (
+        <AuthModel onClose={() => setShowAuth(false)} />
       )}
-    </nav>
+    </>
   );
 }
+
+export default Navbar;
