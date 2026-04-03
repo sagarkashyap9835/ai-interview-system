@@ -35,6 +35,7 @@ import { Route, Routes } from 'react-router-dom'
 import axios from 'axios'
 import { setUserData } from './redux/userSlice'
 import { useDispatch } from 'react-redux'
+import InterviewPage from './pages/InterviewPage'
 export const Serverurl = "http://localhost:4000/"
 
 const App = () => {
@@ -59,6 +60,7 @@ const dispatch=useDispatch()
     <Routes>
       <Route path='/' element={<Home />} />
       <Route path='/auth' element={<Auth />} />
+      <Route path='/interview' element={<InterviewPage/>} />
     </Routes>
   )
 }
